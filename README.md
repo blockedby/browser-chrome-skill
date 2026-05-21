@@ -3,8 +3,20 @@
 A portable Agent Skills package for using Chrome through Chrome DevTools MCP.
 
 - Skill name: `browser-chrome`
-- MCP wrapper: `browser-chrome-mcp`
+- MCP wrapper script: `scripts/mcp.sh`
 - MCP package: `chrome-devtools-mcp@latest`
+
+## Runtime requirements
+
+- Google Chrome or Chromium.
+- Node.js with `npm`/`npx` available.
+- `chrome-devtools-mcp@latest` reachable via:
+
+  ```bash
+  npx -y chrome-devtools-mcp@latest --help
+  ```
+
+- Pi with [`pi-mcp-adapter`](https://github.com/nicobailon/pi-mcp-adapter) installed and enabled.
 
 ## Install for Pi locally
 
@@ -29,7 +41,7 @@ The skill itself can be installed with the Vercel Labs `skills` CLI:
 npx skills add ./browser-chrome-skill --skill browser-chrome --agent pi --global --yes
 ```
 
-The skills CLI installs the skill instructions. Run `scripts/install-local.sh` when you also want MCP entries and wrapper commands.
+The skills CLI installs the skill instructions. Run `scripts/install-local.sh` when you also want MCP entries that point directly at the installed skill scripts.
 
 ## Modes
 
