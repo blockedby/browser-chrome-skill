@@ -5,10 +5,9 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 PI_AGENT_DIR="${PI_AGENT_DIR:-$HOME/.pi/agent}"
 TARGET_SKILL_DIR="${BROWSER_CHROME_SKILL_TARGET:-$PI_AGENT_DIR/skills/browser-chrome}"
-BIN_DIR="${BROWSER_CHROME_BIN_DIR:-$HOME/.local/bin}"
 MCP_JSON="${BROWSER_CHROME_MCP_JSON:-$PI_AGENT_DIR/mcp.json}"
 
-mkdir -p "$TARGET_SKILL_DIR" "$BIN_DIR" "$PI_AGENT_DIR"
+mkdir -p "$TARGET_SKILL_DIR" "$PI_AGENT_DIR"
 
 if command -v rsync >/dev/null 2>&1; then
   rsync -a --delete \
@@ -21,20 +20,7 @@ else
   (cd "$SKILL_DIR" && tar --exclude='.git' --exclude='.gitmodules' -cf - .) | (cd "$TARGET_SKILL_DIR" && tar -xf -)
 fi
 
-link_script() {
-  local source="$1"
-  local name="$2"
-  ln -sfn "$TARGET_SKILL_DIR/scripts/$source" "$BIN_DIR/$name"
-}
-
-link_script check-opened.sh browser-chrome-check-opened
-link_script open-headed.sh browser-chrome-open-headed
-link_script open-headless.sh browser-chrome-open-headless
-link_script close-headed-tab.sh browser-chrome-close-headed-tab
-link_script close-headless.sh browser-chrome-close-headless
-link_script mcp.sh browser-chrome-mcp
-
-python3 - "$MCP_JSON" "$BIN_DIR/browser-chrome-mcp" <<'PY'
+python3 - "$MCP_JSON" "$TARGET_SKILL_DIR/scripts/mcp.sh" <<'PY'
 import json
 import os
 import sys
@@ -74,6 +60,5 @@ PY
 chmod +x "$TARGET_SKILL_DIR/scripts/"*.sh
 
 echo "Installed browser-chrome skill to $TARGET_SKILL_DIR"
-echo "Installed wrapper commands to $BIN_DIR"
 echo "Updated MCP config at $MCP_JSON"
 echo "Restart Pi or reconnect MCP servers before first use."

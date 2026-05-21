@@ -15,8 +15,7 @@ scripts/install-local.sh
 This installs:
 
 - the skill to `~/.pi/agent/skills/browser-chrome`;
-- wrapper commands to `~/.local/bin`;
-- two MCP entries to `~/.pi/agent/mcp.json`:
+- two MCP entries to `~/.pi/agent/mcp.json` that point directly at the installed skill scripts:
   - `browser-chrome-headed`
   - `browser-chrome-headless`
 
@@ -54,12 +53,19 @@ BROWSER_CHROME_HEADED_BIND_ADDRESS=127.0.0.1
 BROWSER_CHROME_HEADED_USER_DATA_DIR=$HOME/.cache/browser-chrome/headed-profile
 BROWSER_CHROME_HEADED_PROFILE_DIRECTORY=Default
 
-# Optional custom start command for remote hosts.
-BROWSER_CHROME_HEADED_START_COMMAND='ssh desktop-host browser-chrome-open-headed'
+# Optional custom start command for remote headed hosts.
+BROWSER_CHROME_HEADED_START_COMMAND='ssh desktop-host /path/to/browser-chrome/scripts/open-headed.sh'
+BROWSER_CHROME_HEADED_LOCAL_START=0
+
+# Optional custom start/close commands for remote headless hosts.
+# The start command must print: OPEN mode=headless id=<id> url=<debug-url>
+BROWSER_CHROME_HEADLESS_START_COMMAND='ssh desktop-host /path/to/browser-chrome/scripts/open-headless.sh'
+BROWSER_CHROME_HEADLESS_CLOSE_COMMAND='ssh desktop-host /path/to/browser-chrome/scripts/close-headless.sh "$BROWSER_CHROME_ID"'
+BROWSER_CHROME_HEADLESS_LOCAL_START=0
 
 # Chrome binary and MCP package.
 BROWSER_CHROME_BIN=google-chrome-stable
 BROWSER_CHROME_MCP_PACKAGE=chrome-devtools-mcp@latest
 ```
 
-For LAN/Tailscale use, set `BROWSER_CHROME_HEADED_URL` and `BROWSER_CHROME_HEADED_BIND_ADDRESS` deliberately.
+For LAN/Tailscale/SSH-tunnel use, set headed and headless URLs/start commands deliberately. No wrapper commands need to be installed into `~/.local/bin`; MCP entries can point directly at the installed skill scripts.

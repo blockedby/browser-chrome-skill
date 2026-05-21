@@ -15,6 +15,10 @@ close_one() {
   local id="${BROWSER_CHROME_ID:-unknown}"
   local pid="${BROWSER_CHROME_PID:-}"
   local profile="${BROWSER_CHROME_USER_DATA_DIR:-}"
+  local close_command="${BROWSER_CHROME_CLOSE_COMMAND:-}"
+  if [ -n "$close_command" ]; then
+    BROWSER_CHROME_ID="$id" BROWSER_CHROME_DEBUG_URL="${BROWSER_CHROME_DEBUG_URL:-}" bash -lc "$close_command" >/dev/null 2>&1 || true
+  fi
   if [ -n "$pid" ] && kill -0 "$pid" >/dev/null 2>&1; then
     kill "$pid" >/dev/null 2>&1 || true
     for _ in $(seq 1 20); do

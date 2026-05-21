@@ -21,6 +21,11 @@ if [ -n "${BROWSER_CHROME_HEADED_START_COMMAND:-}" ]; then
   exit 1
 fi
 
+if [ "${BROWSER_CHROME_HEADED_LOCAL_START:-1}" = "0" ]; then
+  printf 'FAILED mode=headed url=%s reason=endpoint-closed-and-local-start-disabled hint=start-chrome-or-ssh-tunnel\n' "$url" >&2
+  exit 1
+fi
+
 profile_dir="$(bc_headed_user_data_dir)"
 profile_directory="${1:-$(bc_headed_profile_directory)}"
 port="$(bc_headed_port)"

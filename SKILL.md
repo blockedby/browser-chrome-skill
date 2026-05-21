@@ -42,9 +42,10 @@ For simple fetches and checks that do not need persistent session data:
 
 1. Use MCP server `browser-chrome-headless`.
 2. A fresh headless Chrome instance must be created for the task. It must use a unique port and temporary user-data-dir.
-3. Do the browser work.
-4. Close pages/tabs you opened when possible.
-5. The wrapper must close the headless instance after the MCP server exits. If you manually opened headless with `scripts/open-headless.sh`, close it with `scripts/close-headless.sh <id>`.
+3. The instance may be local or remote via LAN, Tailscale, or SSH tunnel. If remote, `BROWSER_CHROME_HEADLESS_START_COMMAND` and `BROWSER_CHROME_HEADLESS_CLOSE_COMMAND` must define start and cleanup.
+4. Do the browser work.
+5. Close pages/tabs you opened when possible.
+6. The wrapper must close the headless instance after the MCP server exits. If you manually opened headless with `scripts/open-headless.sh`, close it with `scripts/close-headless.sh <id>`.
 
 Do not reuse a headless instance across unrelated or parallel agents.
 
