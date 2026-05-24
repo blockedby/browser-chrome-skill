@@ -5,8 +5,24 @@ bc_home() {
   printf '%s\n' "${BROWSER_CHROME_HOME:-${XDG_CACHE_HOME:-$HOME/.cache}/browser-chrome}"
 }
 
+bc_validate_headed_port() {
+  local port="$1"
+  case "$port" in
+    ''|*[!0-9]*)
+      printf 'FAILED mode=headed reason=invalid-headed-port port=%s hint=use-9200-9300\n' "$port" >&2
+      return 1
+      ;;
+  esac
+  if [ "$port" -lt 9200 ] || [ "$port" -gt 9300 ]; then
+    printf 'FAILED mode=headed reason=invalid-headed-port port=%s hint=use-9200-9300\n' "$port" >&2
+    return 1
+  fi
+}
+
 bc_headed_port() {
-  printf '%s\n' "${BROWSER_CHROME_HEADED_PORT:-9233}"
+  local port="${BROWSER_CHROME_HEADED_PORT:-9233}"
+  bc_validate_headed_port "$port"
+  printf '%s\n' "$port"
 }
 
 bc_headed_url() {

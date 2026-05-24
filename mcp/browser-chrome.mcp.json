@@ -1,5 +1,10 @@
 {
   "mcpServers": {
+    "browser-chrome-control": {
+      "command": "browser-chrome-control-mcp",
+      "args": [],
+      "lifecycle": "lazy"
+    },
     "browser-chrome-headed": {
       "command": "browser-chrome-mcp",
       "args": ["headed"],

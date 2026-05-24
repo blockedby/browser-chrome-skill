@@ -20,7 +20,7 @@ else
   (cd "$SKILL_DIR" && tar --exclude='.git' --exclude='.gitmodules' -cf - .) | (cd "$TARGET_SKILL_DIR" && tar -xf -)
 fi
 
-python3 - "$MCP_JSON" "$TARGET_SKILL_DIR/scripts/mcp.sh" <<'PY'
+python3 - "$MCP_JSON" "$TARGET_SKILL_DIR/scripts/mcp.sh" "$TARGET_SKILL_DIR/scripts/control-mcp.sh" <<'PY'
 import json
 import os
 import sys
@@ -28,6 +28,7 @@ from pathlib import Path
 
 mcp_path = Path(sys.argv[1]).expanduser()
 command = sys.argv[2]
+control_command = sys.argv[3]
 if mcp_path.exists():
     with mcp_path.open() as f:
         data = json.load(f)
@@ -35,6 +36,11 @@ else:
     data = {}
 servers = data.setdefault("mcpServers", {})
 common_env = {"CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS": "1"}
+servers["browser-chrome-control"] = {
+    "command": control_command,
+    "args": [],
+    "lifecycle": "lazy",
+}
 servers["browser-chrome-headed"] = {
     "command": command,
     "args": ["headed"],
@@ -61,4 +67,5 @@ chmod +x "$TARGET_SKILL_DIR/scripts/"*.sh
 
 echo "Installed browser-chrome skill to $TARGET_SKILL_DIR"
 echo "Updated MCP config at $MCP_JSON"
+echo "MCP servers: browser-chrome-control, browser-chrome-headed, browser-chrome-headless"
 echo "Restart Pi or reconnect MCP servers before first use."

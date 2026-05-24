@@ -9,7 +9,7 @@ Use this skill for Chrome browser automation, UI inspection, screenshots, consol
 
 ## Mode selection
 
-Default to **headless** unless the task needs an authenticated/persistent browser state.
+Default to **headless** unless the task needs an authenticated/persistent browser state. When MCP is available, first use `browser-chrome-control` to make the policy explicit, then use the returned DevTools MCP server for actual browser actions.
 
 Use **headless** when:
 
@@ -29,6 +29,7 @@ Use **headed** when:
 
 Resolve script paths relative to this skill directory.
 
+- `scripts/control-mcp.sh` — MCP control/session policy server exposing `browser_chrome_*` tools.
 - `scripts/check-opened.sh` — check whether headed or headless Chrome is reachable.
 - `scripts/open-headed.sh` — open or reuse a headed persistent Chrome profile.
 - `scripts/open-headless.sh` — open a fresh isolated headless Chrome with a unique profile and port.
@@ -40,12 +41,13 @@ Resolve script paths relative to this skill directory.
 
 For simple fetches and checks that do not need persistent session data:
 
-1. Use MCP server `browser-chrome-headless`.
-2. A fresh headless Chrome instance must be created for the task. It must use a unique port and temporary user-data-dir.
-3. The instance may be local or remote via LAN, Tailscale, or SSH tunnel. If remote, `BROWSER_CHROME_HEADLESS_START_COMMAND` and `BROWSER_CHROME_HEADLESS_CLOSE_COMMAND` must define start and cleanup.
-4. Do the browser work.
-5. Close pages/tabs you opened when possible.
-6. The wrapper must close the headless instance after the MCP server exits. If you manually opened headless with `scripts/open-headless.sh`, close it with `scripts/close-headless.sh <id>`.
+1. Call `browser_chrome_acquire_session` on MCP server `browser-chrome-control` with `form: "headless-disposable"`.
+2. Use the returned guidance: MCP server `browser-chrome-headless` for `chrome_devtools_*` actions.
+3. A fresh headless Chrome instance must be created for the task by the headless MCP wrapper. It must use a unique port and temporary user-data-dir.
+4. The instance may be local or remote via LAN, Tailscale, or SSH tunnel. If remote, `BROWSER_CHROME_HEADLESS_START_COMMAND` and `BROWSER_CHROME_HEADLESS_CLOSE_COMMAND` must define start and cleanup.
+5. Do the browser work.
+6. Close pages/tabs you opened when possible.
+7. The wrapper must close the headless instance after the MCP server exits. If you manually opened headless with `scripts/open-headless.sh`, close it with `scripts/close-headless.sh <id>`.
 
 Do not reuse a headless instance across unrelated or parallel agents.
 
@@ -53,25 +55,27 @@ Do not reuse a headless instance across unrelated or parallel agents.
 
 For tasks requiring auth/session/profile data:
 
-1. Run `scripts/check-opened.sh headed`.
-2. If reachable, reuse the running browser.
-3. If not reachable, run `scripts/open-headed.sh`.
-4. Use MCP server `browser-chrome-headed`.
-5. Do not spawn duplicate headed Chrome for the same profile.
-6. Close only tabs/pages opened by the agent. Do not close the whole headed browser unless the user explicitly asks.
+1. Call `browser_chrome_acquire_session` on MCP server `browser-chrome-control` with `form: "headed-persistent"` and a short purpose, or call `browser_chrome_assert_persistent` when only validation is needed.
+2. The control MCP acquires a cross-process advisory lease, delegates open/reuse to `scripts/open-headed.sh`, and verifies the endpoint.
+3. Use the returned guidance: MCP server `browser-chrome-headed` for `chrome_devtools_*` actions.
+4. Do not spawn duplicate headed Chrome for the same profile, and do not fall back to headless or disposable headed when saved auth/session/profile state is required.
+5. Close only tabs/pages opened by the agent. Do not close the whole headed browser unless the user explicitly asks.
+6. When done, call `browser_chrome_release` with the returned `leaseId`. Release only drops the control lease; it must not close the headed browser.
 
 If the headed profile appears to be running but the DevTools endpoint is not reachable, stop and report the blocker instead of opening another browser with the same profile.
 
 ## MCP usage
 
-Prefer the Pi MCP proxy tool:
+Prefer the control-first flow:
 
 ```text
-mcp({ server: "browser-chrome-headless" })
-mcp({ server: "browser-chrome-headed" })
+mcp({ server: "browser-chrome-control" })
+# call browser_chrome_status, browser_chrome_acquire_session, or browser_chrome_assert_persistent
+mcp({ server: "browser-chrome-headless" }) # for returned headless-disposable guidance
+mcp({ server: "browser-chrome-headed" })   # for returned headed-persistent guidance
 ```
 
-Then call the needed `chrome_devtools_*` tools exposed by the selected server.
+Then call the needed `chrome_devtools_*` tools exposed by the selected DevTools server. The control MCP is not a full `chrome-devtools-mcp` proxy.
 
 ## Safety
 
