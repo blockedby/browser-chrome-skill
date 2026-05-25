@@ -108,6 +108,13 @@ test('MCP initialize and tools/list expose only browser_chrome policy tools', as
     'browser_chrome_assert_persistent',
     'browser_chrome_release',
   ]);
+  const statusTool = listed.result.tools.find((tool) => tool.name === 'browser_chrome_status');
+  assert.deepEqual(statusTool.annotations, {
+    readOnlyHint: true,
+    destructiveHint: false,
+    idempotentHint: true,
+    openWorldHint: false,
+  });
 });
 
 test('status models all browser forms without leaking the user-data-dir path', async () => {

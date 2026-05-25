@@ -18,6 +18,12 @@ const TOOL_DEFINITIONS = [
       additionalProperties: false,
       properties: {},
     },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: 'browser_chrome_acquire_session',
@@ -33,6 +39,12 @@ const TOOL_DEFINITIONS = [
         requiresProfile: { type: 'boolean', description: 'Alias for requiresPersistent.' },
       },
     },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
   },
   {
     name: 'browser_chrome_assert_persistent',
@@ -43,6 +55,12 @@ const TOOL_DEFINITIONS = [
       properties: {
         form: { type: 'string', enum: FORMS, default: 'headed-persistent' },
       },
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
   {
@@ -55,6 +73,12 @@ const TOOL_DEFINITIONS = [
         form: { type: 'string', enum: FORMS, default: 'headed-persistent' },
         leaseId: { type: 'string', description: 'Lease id returned by browser_chrome_acquire_session.' },
       },
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
     },
   },
 ];
@@ -435,11 +459,13 @@ function jsonRpcError(id, code, message) {
 
 export async function runStdio(server = createControlServer()) {
   let buffer = Buffer.alloc(0);
+  let transport = 'line';
   process.stdin.on('data', async (chunk) => {
     buffer = Buffer.concat([buffer, chunk]);
     while (true) {
-      const parsed = readFrame(buffer);
+      const parsed = readMessage(buffer);
       if (!parsed) break;
+      transport = parsed.transport;
       buffer = parsed.remaining;
       let response;
       try {
@@ -447,12 +473,28 @@ export async function runStdio(server = createControlServer()) {
       } catch (error) {
         response = jsonRpcError(null, -32700, error.message || 'Parse error');
       }
-      if (response) writeFrame(response);
+      if (response) writeMessage(response, transport);
     }
   });
 }
 
-function readFrame(buffer) {
+function readMessage(buffer) {
+  if (buffer.length === 0) return null;
+
+  if (buffer.subarray(0, Math.min(buffer.length, 14)).toString('utf8').toLowerCase().startsWith('content-length')) {
+    return readContentLengthMessage(buffer);
+  }
+
+  const newline = buffer.indexOf('\n');
+  if (newline < 0) return null;
+  const line = buffer.subarray(0, newline).toString('utf8').trim();
+  if (!line) {
+    return { body: '{}', remaining: buffer.subarray(newline + 1), transport: 'line' };
+  }
+  return { body: line, remaining: buffer.subarray(newline + 1), transport: 'line' };
+}
+
+function readContentLengthMessage(buffer) {
   const headerEnd = buffer.indexOf('\r\n\r\n');
   if (headerEnd < 0) return null;
   const header = buffer.subarray(0, headerEnd).toString('utf8');
@@ -465,12 +507,17 @@ function readFrame(buffer) {
   return {
     body: buffer.subarray(bodyStart, bodyEnd).toString('utf8'),
     remaining: buffer.subarray(bodyEnd),
+    transport: 'content-length',
   };
 }
 
-function writeFrame(message) {
+function writeMessage(message, transport = 'line') {
   const body = JSON.stringify(message);
-  process.stdout.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`);
+  if (transport === 'content-length') {
+    process.stdout.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`);
+    return;
+  }
+  process.stdout.write(`${body}\n`);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
