@@ -1,5 +1,8 @@
 # browser-chrome skill
 
+[![skills.sh](https://skills.sh/b/blockedby/browser-chrome-skill)](https://skills.sh/blockedby/browser-chrome-skill)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A portable [Agent Skills](https://skills.sh/) package for using Chrome through Chrome DevTools MCP.
 
 - Skill name: `browser-chrome`
@@ -125,3 +128,7 @@ For LAN, Tailscale, or SSH-tunnel use, set endpoint URLs, bind addresses, and re
 The default headed profile is a dedicated profile under `BROWSER_CHROME_HOME`, not the normal personal Chrome profile. A custom endpoint or start command may still point to an authenticated profile, so configure it intentionally and only select `headed-persistent` when that access is required. Never print or copy credentials or browser storage. DevTools endpoint reachability is not evidence of sandbox isolation or authorization.
 
 See [`SKILL.md`](SKILL.md), [`references/mode-selection.md`](references/mode-selection.md), [`references/mcp-config.md`](references/mcp-config.md), and [`references/security.md`](references/security.md) for the operational policy.
+
+## License
+
+Released under the [MIT License](LICENSE).
