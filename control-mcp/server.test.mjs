@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, access } from 'node:fs/promises';
 import { constants } from 'node:fs';
+import { spawn } from 'node:child_process';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import {
@@ -247,6 +249,78 @@ test('assert_persistent rejects disposable forms and validates headed port polic
   });
   assert.equal(invalidPort.result.isError, true);
   assert.match(invalidPort.result.content[0].text, /9200-9300/);
+});
+
+function nextChildMessage(child) {
+  let buffer = Buffer.alloc(0);
+  return new Promise((resolve, reject) => {
+    const onData = (chunk) => {
+      buffer = Buffer.concat([buffer, chunk]);
+      const firstLine = buffer.indexOf(10);
+      if (firstLine >= 0 && !buffer.toString('utf8', 0, Math.min(firstLine, 14)).toLowerCase().startsWith('content-length')) {
+        cleanup();
+        resolve(JSON.parse(buffer.subarray(0, firstLine).toString('utf8')));
+        return;
+      }
+      const headerEnd = buffer.indexOf('\r\n\r\n');
+      if (headerEnd < 0) return;
+      const header = buffer.toString('utf8', 0, headerEnd);
+      const length = Number(header.match(/Content-Length:\s*(\d+)/i)?.[1]);
+      if (!Number.isInteger(length)) return;
+      const bodyStart = headerEnd + 4;
+      if (buffer.length < bodyStart + length) return;
+      cleanup();
+      resolve(JSON.parse(buffer.subarray(bodyStart, bodyStart + length).toString('utf8')));
+    };
+    const onError = (error) => {
+      cleanup();
+      reject(error);
+    };
+    const onExit = () => {
+      cleanup();
+      reject(new Error('control MCP exited before replying'));
+    };
+    const cleanup = () => {
+      child.stdout.off('data', onData);
+      child.off('error', onError);
+      child.off('exit', onExit);
+    };
+    child.stdout.on('data', onData);
+    child.once('error', onError);
+    child.once('exit', onExit);
+  });
+}
+
+test('stdio transport accepts line-delimited and Content-Length MCP messages', async () => {
+  const base = await tempDir();
+  const serverPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'server.mjs');
+  const child = spawn(process.execPath, [serverPath], {
+    cwd: path.resolve(serverPath, '..'),
+    env: { ...process.env, BROWSER_CHROME_HOME: path.join(base, 'home') },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  try {
+    child.stdin.write(`${JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: { protocolVersion: '2024-11-05' },
+    })}\n`);
+    const initialized = await nextChildMessage(child);
+    assert.equal(initialized.result.serverInfo.name, 'browser-chrome-control');
+
+    const body = JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} });
+    child.stdin.write(`Content-Length: ${Buffer.byteLength(body, 'utf8')}\r\n\r\n${body}`);
+    const listed = await nextChildMessage(child);
+    assert.deepEqual(getToolNames(listed.result.tools), [
+      'browser_chrome_status',
+      'browser_chrome_acquire_session',
+      'browser_chrome_assert_persistent',
+      'browser_chrome_release',
+    ]);
+  } finally {
+    child.kill();
+  }
 });
 
 test('headless-disposable acquisition returns guidance without opening Chrome', async () => {

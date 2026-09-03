@@ -1,11 +1,18 @@
 ---
 name: browser-chrome
 description: Use when browser automation or Chrome DevTools debugging is needed. Prefer disposable headless Chrome for simple anonymous or parallel checks; use headed persistent Chrome only for login/logout, current auth, saved sessions, passwords, or profile data.
+license: MIT
 ---
 
 # Browser Chrome
 
 Use this skill for Chrome browser automation, UI inspection, screenshots, console/network debugging, and Chrome DevTools MCP workflows.
+
+## Contract
+
+- Inputs: the browser automation or debugging need and whether authenticated, saved, or persistent session state is required.
+- Outputs: a selected safe form (`headless-disposable` or `headed-persistent`) and the matching operational DevTools MCP server.
+- Non-goals: reading or exporting passwords, cookies, tokens, or private profile files; silently using a personal profile; or claiming that DevTools access is sandbox isolation.
 
 ## Mode selection
 
@@ -79,11 +86,12 @@ Then call the needed `chrome_devtools_*` tools exposed by the selected DevTools 
 
 ## Safety
 
-The headed browser may contain the user's active accounts, cookies, passwords, and private data.
+The headed browser may contain the user's active accounts, cookies, passwords, and private data. The default local headed profile is a dedicated profile under `BROWSER_CHROME_HOME`; it is not the normal personal Chrome profile. A custom endpoint or start command may still point to an authenticated profile, so that choice must be explicit.
 
 - Do not inspect, export, print, or copy cookies, tokens, passwords, local storage, or private profile files unless the user explicitly asks.
-- Do not use headed mode for anonymous/public tasks.
-- Do not perform destructive account actions unless explicitly requested.
+- Do not silently attach to a personal profile or use headed mode for public/anonymous tasks.
+- Do not perform account-changing or destructive actions without explicit user direction.
+- Restrict DevTools endpoints to the intended host/network. Reachability is not sandbox isolation or authorization.
 - Treat DevTools access as equivalent to controlling the user's browser session.
 
 For more detail, read `references/mode-selection.md`, `references/mcp-config.md`, and `references/security.md`.

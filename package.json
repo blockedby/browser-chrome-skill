@@ -1,13 +1,34 @@
 {
   "name": "browser-chrome-skill",
-  "private": true,
   "version": "0.1.0",
   "description": "Agent Skill for Chrome browser automation through Chrome DevTools MCP.",
+  "license": "MIT",
+  "author": "Alexandr Kondakov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blockedby/browser-chrome-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/blockedby/browser-chrome-skill/issues"
+  },
+  "homepage": "https://github.com/blockedby/browser-chrome-skill",
   "keywords": ["agent-skill", "pi", "chrome", "mcp"],
+  "files": [
+    "LICENSE",
+    "README.md",
+    "SKILL.md",
+    "control-mcp/",
+    "mcp/",
+    "references/",
+    "scripts/"
+  ],
   "pi": {
     "skills": ["."]
   },
   "scripts": {
+    "test": "node --test control-mcp/*.test.mjs",
+    "test:shell": "bash -n scripts/*.sh",
+    "validate": "npm test && npm run test:shell",
     "install:local": "bash scripts/install-local.sh"
   }
 }
