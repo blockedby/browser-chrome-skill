@@ -12,7 +12,8 @@ const FORMS = ['headless-disposable', 'headed-disposable', 'headed-persistent'];
 const TOOL_DEFINITIONS = [
   {
     name: 'browser_chrome_status',
-    description: 'Report browser-chrome control policy state, configured forms, headed-persistent reachability, and MCP guidance without exposing private profile paths.',
+    description:
+      'Report browser-chrome control policy state, configured forms, headed-persistent reachability, and MCP guidance without exposing private profile paths.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -33,8 +34,14 @@ const TOOL_DEFINITIONS = [
       additionalProperties: false,
       properties: {
         form: { type: 'string', enum: FORMS, default: 'headless-disposable' },
-        purpose: { type: 'string', description: 'Short task purpose for local lease bookkeeping. Do not include secrets.' },
-        requiresPersistent: { type: 'boolean', description: 'Set true when saved auth/session/profile state is required.' },
+        purpose: {
+          type: 'string',
+          description: 'Short task purpose for local lease bookkeeping. Do not include secrets.',
+        },
+        requiresPersistent: {
+          type: 'boolean',
+          description: 'Set true when saved auth/session/profile state is required.',
+        },
         requiresSavedAuth: { type: 'boolean', description: 'Alias for requiresPersistent.' },
         requiresProfile: { type: 'boolean', description: 'Alias for requiresPersistent.' },
       },
@@ -48,7 +55,8 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'browser_chrome_assert_persistent',
-    description: 'Assert that the configured headed-persistent browser is the required form and is reachable after script-first open/reuse.',
+    description:
+      'Assert that the configured headed-persistent browser is the required form and is reachable after script-first open/reuse.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -65,7 +73,8 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'browser_chrome_release',
-    description: 'Release a browser-chrome control lease. Headed-persistent release never closes the whole headed browser.',
+    description:
+      'Release a browser-chrome control lease. Headed-persistent release never closes the whole headed browser.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,
@@ -88,7 +97,7 @@ export function getToolNames(tools = TOOL_DEFINITIONS) {
 }
 
 export function createControlServer(options = {}) {
-  const env = { ...process.env, ...(options.env || {}) };
+  const env = { ...process.env, ...options.env };
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const skillDir = options.skillDir || env.BROWSER_CHROME_SKILL_DIR || path.resolve(moduleDir, '..');
   return {
@@ -178,13 +187,15 @@ async function status(server) {
         persistent: false,
         available: true,
         mcpServer: 'browser-chrome-headless',
-        guidance: 'Use browser-chrome-headless for anonymous/disposable chrome_devtools_* actions. Control MCP does not pre-open headless in Phase 1.',
+        guidance:
+          'Use browser-chrome-headless for anonymous/disposable chrome_devtools_* actions. Control MCP does not pre-open headless in Phase 1.',
       },
       {
         form: 'headed-disposable',
         persistent: false,
         available: false,
-        guidance: 'No disposable-headed launcher is provided in Phase 1; use headless-disposable or headed-persistent as appropriate.',
+        guidance:
+          'No disposable-headed launcher is provided in Phase 1; use headless-disposable or headed-persistent as appropriate.',
       },
       {
         form: 'headed-persistent',
@@ -212,7 +223,9 @@ async function acquireSession(server, args) {
   if (!form.ok) return form;
 
   if (requiresPersistent(args) && form.value !== 'headed-persistent') {
-    return fail('Saved auth/session/profile state requires form=headed-persistent. Do not use headless-disposable or headed-disposable for logged-in profile tasks.');
+    return fail(
+      'Saved auth/session/profile state requires form=headed-persistent. Do not use headless-disposable or headed-disposable for logged-in profile tasks.',
+    );
   }
 
   if (form.value === 'headless-disposable') {
@@ -222,12 +235,15 @@ async function acquireSession(server, args) {
       persistent: false,
       controlOwnsBrowser: false,
       mcpServer: 'browser-chrome-headless',
-      guidance: 'Use browser-chrome-headless for chrome_devtools_* actions; its wrapper opens and closes an isolated headless browser.',
+      guidance:
+        'Use browser-chrome-headless for chrome_devtools_* actions; its wrapper opens and closes an isolated headless browser.',
     };
   }
 
   if (form.value === 'headed-disposable') {
-    return fail('headed-disposable is modeled but not launched by Phase 1 control MCP. Use headless-disposable for disposable checks or headed-persistent when saved auth/session/profile state is required.');
+    return fail(
+      'headed-disposable is modeled but not launched by Phase 1 control MCP. Use headless-disposable for disposable checks or headed-persistent when saved auth/session/profile state is required.',
+    );
   }
 
   const portPolicy = validateHeadedPort(server.env);
@@ -239,7 +255,12 @@ async function acquireSession(server, args) {
     const opened = await openHeaded(server);
     if (!opened.ok) return await failAndRelease(server, lease.leaseId, opened.error);
     const reachable = await endpointOk(opened.url, server.env);
-    if (!reachable) return await failAndRelease(server, lease.leaseId, 'headed-persistent endpoint was not reachable after scripts/open-headed.sh completed.');
+    if (!reachable)
+      return await failAndRelease(
+        server,
+        lease.leaseId,
+        'headed-persistent endpoint was not reachable after scripts/open-headed.sh completed.',
+      );
     return {
       ok: true,
       form: 'headed-persistent',
@@ -247,7 +268,8 @@ async function acquireSession(server, args) {
       leaseId: lease.leaseId,
       endpoint: opened.url,
       mcpServer: 'browser-chrome-headed',
-      guidance: 'Use browser-chrome-headed for chrome_devtools_* actions. Release this control lease when done; release does not close headed Chrome.',
+      guidance:
+        'Use browser-chrome-headed for chrome_devtools_* actions. Release this control lease when done; release does not close headed Chrome.',
     };
   } catch (error) {
     return await failAndRelease(server, lease.leaseId, error.message || 'headed-persistent acquisition failed');
@@ -258,12 +280,16 @@ async function assertPersistent(server, args) {
   const form = normalizeForm(args.form || 'headed-persistent');
   if (!form.ok) return form;
   if (form.value !== 'headed-persistent') {
-    return fail('Persistent profile/auth assertions require form=headed-persistent. Disposable forms cannot satisfy saved session/profile requirements.');
+    return fail(
+      'Persistent profile/auth assertions require form=headed-persistent. Disposable forms cannot satisfy saved session/profile requirements.',
+    );
   }
   const portPolicy = validateHeadedPort(server.env);
   if (!portPolicy.ok) return fail(portPolicy.error);
   if (!headedUserDataDir(server.env)) {
-    return fail('headed-persistent profile configuration is missing. Set BROWSER_CHROME_HEADED_USER_DATA_DIR or use the default browser-chrome home.');
+    return fail(
+      'headed-persistent profile configuration is missing. Set BROWSER_CHROME_HEADED_USER_DATA_DIR or use the default browser-chrome home.',
+    );
   }
   const opened = await openHeaded(server);
   if (!opened.ok) return opened;
@@ -276,7 +302,8 @@ async function assertPersistent(server, args) {
     reachable: true,
     endpoint: opened.url,
     mcpServer: 'browser-chrome-headed',
-    guidance: 'Use browser-chrome-headed for chrome_devtools_* actions; do not switch to disposable/headless for saved auth/session tasks.',
+    guidance:
+      'Use browser-chrome-headed for chrome_devtools_* actions; do not switch to disposable/headless for saved auth/session tasks.',
   };
 }
 
@@ -289,7 +316,8 @@ async function releaseSession(server, args) {
       form: form.value,
       released: false,
       closedBrowser: false,
-      guidance: 'No control-owned headless browser was acquired in Phase 1. browser-chrome-headless owns its own cleanup.',
+      guidance:
+        'No control-owned headless browser was acquired in Phase 1. browser-chrome-headless owns its own cleanup.',
     };
   }
   if (form.value === 'headed-disposable') {
@@ -304,7 +332,13 @@ async function releaseSession(server, args) {
   if (!args.leaseId) return fail('leaseId is required to release a headed-persistent control lease.');
   const lease = await readLease(server).catch(() => null);
   if (!lease) {
-    return { ok: true, form: form.value, released: false, closedBrowser: false, guidance: 'No headed-persistent control lease was active.' };
+    return {
+      ok: true,
+      form: form.value,
+      released: false,
+      closedBrowser: false,
+      guidance: 'No headed-persistent control lease was active.',
+    };
   }
   if (lease.leaseId !== args.leaseId) {
     return fail('headed-persistent control lease is held by a different leaseId; not releasing it.');
@@ -337,11 +371,18 @@ function validateHeadedPort(env) {
   try {
     portText = endpoint ? new URL(endpoint).port : String(env.BROWSER_CHROME_HEADED_PORT || '9233');
   } catch {
-    return { ok: false, error: 'BROWSER_CHROME_HEADED_URL must be a valid URL when set for headed-persistent browser policy.' };
+    return {
+      ok: false,
+      error: 'BROWSER_CHROME_HEADED_URL must be a valid URL when set for headed-persistent browser policy.',
+    };
   }
   const port = Number(portText);
   if (!Number.isInteger(port) || port < 9200 || port > 9300) {
-    return { ok: false, error: 'BROWSER_CHROME_HEADED_PORT / headed endpoint port must be an integer in the 9200-9300 range for headed-persistent browser policy.' };
+    return {
+      ok: false,
+      error:
+        'BROWSER_CHROME_HEADED_PORT / headed endpoint port must be an integer in the 9200-9300 range for headed-persistent browser policy.',
+    };
   }
   return { ok: true, port, range: '9200-9300' };
 }
@@ -362,7 +403,10 @@ function headedProfileDirectory(env) {
 }
 
 function browserChromeHome(env) {
-  return env.BROWSER_CHROME_HOME || path.join(env.XDG_CACHE_HOME || path.join(env.HOME || os.homedir(), '.cache'), 'browser-chrome');
+  return (
+    env.BROWSER_CHROME_HOME ||
+    path.join(env.XDG_CACHE_HOME || path.join(env.HOME || os.homedir(), '.cache'), 'browser-chrome')
+  );
 }
 
 function lockDir(server) {
@@ -385,7 +429,9 @@ async function acquireHeadedLock(server, purpose) {
     if (error.code === 'EEXIST') {
       const lease = await readLease(server).catch(() => null);
       return fail('headed-persistent control lease is busy/locked by another process.', {
-        lock: lease ? { active: true, leaseId: lease.leaseId, pid: lease.pid, createdAt: lease.createdAt } : { active: true },
+        lock: lease
+          ? { active: true, leaseId: lease.leaseId, pid: lease.pid, createdAt: lease.createdAt }
+          : { active: true },
       });
     }
     throw error;
@@ -419,7 +465,9 @@ async function openHeaded(server) {
   const script = path.join(server.skillDir, 'scripts', 'open-headed.sh');
   const result = await execFileCapture(script, [], server.env);
   if (result.code !== 0) {
-    return fail('scripts/open-headed.sh failed to open/reuse headed-persistent Chrome. Check local Chrome/start-command configuration.');
+    return fail(
+      'scripts/open-headed.sh failed to open/reuse headed-persistent Chrome. Check local Chrome/start-command configuration.',
+    );
   }
   const url = parseField(result.stdout, 'url') || headedUrl(server.env);
   return { ok: true, url };
@@ -440,7 +488,10 @@ function parseField(output, field) {
 }
 
 async function endpointOk(url, env) {
-  const timeoutMs = Math.max(100, Number(env.BROWSER_CHROME_CURL_TIMEOUT_MS || env.BROWSER_CHROME_CONTROL_ENDPOINT_TIMEOUT_MS || '750'));
+  const timeoutMs = Math.max(
+    100,
+    Number(env.BROWSER_CHROME_CURL_TIMEOUT_MS || env.BROWSER_CHROME_CONTROL_ENDPOINT_TIMEOUT_MS || '750'),
+  );
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

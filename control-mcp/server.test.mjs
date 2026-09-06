@@ -8,11 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import {
-  createControlServer,
-  getToolNames,
-  handleJsonRpcRequest,
-} from './server.mjs';
+import { createControlServer, getToolNames, handleJsonRpcRequest } from './server.mjs';
 
 async function tempDir() {
   return mkdtemp(path.join(os.tmpdir(), 'browser-chrome-control-test-'));
@@ -58,7 +54,7 @@ async function fakeSkillDir(baseDir, logPath) {
   await mkdir(scripts, { recursive: true });
   await writeFile(
     path.join(scripts, 'open-headed.sh'),
-    `#!/usr/bin/env bash\nset -euo pipefail\necho open-headed >> ${JSON.stringify(logPath)}\nprintf 'OPEN mode=headed url=%s reused=1\\n' \"$BROWSER_CHROME_HEADED_URL\"\n`,
+    `#!/usr/bin/env bash\nset -euo pipefail\necho open-headed >> ${JSON.stringify(logPath)}\nprintf 'OPEN mode=headed url=%s reused=1\\n' "$BROWSER_CHROME_HEADED_URL"\n`,
     { mode: 0o755 },
   );
   await writeFile(
@@ -76,12 +72,14 @@ function resultJson(response) {
 }
 
 async function call(server, name, args = {}) {
-  return resultJson(await handleJsonRpcRequest(server, {
-    jsonrpc: '2.0',
-    id: 1,
-    method: 'tools/call',
-    params: { name, arguments: args },
-  }));
+  return resultJson(
+    await handleJsonRpcRequest(server, {
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name, arguments: args },
+    }),
+  );
 }
 
 test('MCP initialize and tools/list expose only browser_chrome policy tools', async () => {
@@ -135,11 +133,10 @@ test('status models all browser forms without leaking the user-data-dir path', a
     });
 
     const status = await call(server, 'browser_chrome_status');
-    assert.deepEqual(status.forms.map((form) => form.form), [
-      'headless-disposable',
-      'headed-disposable',
-      'headed-persistent',
-    ]);
+    assert.deepEqual(
+      status.forms.map((form) => form.form),
+      ['headless-disposable', 'headed-disposable', 'headed-persistent'],
+    );
     assert.equal(status.headedPersistent.reachable, true);
     assert.equal(JSON.stringify(status).includes(privateProfilePath), false);
   });
@@ -257,7 +254,10 @@ function nextChildMessage(child) {
     const onData = (chunk) => {
       buffer = Buffer.concat([buffer, chunk]);
       const firstLine = buffer.indexOf(10);
-      if (firstLine >= 0 && !buffer.toString('utf8', 0, Math.min(firstLine, 14)).toLowerCase().startsWith('content-length')) {
+      if (
+        firstLine >= 0 &&
+        !buffer.toString('utf8', 0, Math.min(firstLine, 14)).toLowerCase().startsWith('content-length')
+      ) {
         cleanup();
         resolve(JSON.parse(buffer.subarray(0, firstLine).toString('utf8')));
         return;
@@ -300,12 +300,14 @@ test('stdio transport accepts line-delimited and Content-Length MCP messages', a
     stdio: ['pipe', 'pipe', 'pipe'],
   });
   try {
-    child.stdin.write(`${JSON.stringify({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: { protocolVersion: '2024-11-05' },
-    })}\n`);
+    child.stdin.write(
+      `${JSON.stringify({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: { protocolVersion: '2024-11-05' },
+      })}\n`,
+    );
     const initialized = await nextChildMessage(child);
     assert.equal(initialized.result.serverInfo.name, 'browser-chrome-control');
 

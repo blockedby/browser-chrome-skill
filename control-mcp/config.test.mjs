@@ -30,7 +30,7 @@ test('example MCP config preserves existing servers and adds browser-chrome-cont
   assert.equal(config.mcpServers['browser-chrome-headless'].args[0], 'headless');
 });
 
-test('install-local preserves existing servers and writes all local entries', async t => {
+test('install-local preserves existing servers and writes all local entries', async (t) => {
   const base = await tempDir(t);
   const target = path.join(base, 'skill-target');
   const mcpJson = path.join(base, 'mcp.json');
@@ -65,7 +65,7 @@ test('install-local preserves existing servers and writes all local entries', as
   await access(path.join(target, 'runtime', 'node_modules', 'chrome-devtools-mcp', 'cli.mjs'));
 });
 
-test('failed runtime installation leaves existing installation and config intact', async t => {
+test('failed runtime installation leaves existing installation and config intact', async (t) => {
   const base = await tempDir(t);
   const mcpJson = path.join(base, 'mcp.json');
   const before = '{"mcpServers":{"keep":{"command":"keep"}}}\n';

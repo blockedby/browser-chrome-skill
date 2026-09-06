@@ -94,6 +94,20 @@ The launcher preserves the caller's working directory. It starts its own install
 
 Update the skill to a reviewed release, then rerun `scripts/install-local.sh` for a Pi installation, or `scripts/install-runtime.sh` for an in-place installation. There is no automatic update during MCP startup. Maintainers change `runtime/package.json` and `runtime/package-lock.json` together when updating the pinned MCP version.
 
+## Development checks
+
+Install development tools from the repository checkout with `npm ci`, then run:
+
+```bash
+npm run lint         # Oxlint for JavaScript and syntax checks for shell scripts
+npm run lint:fix     # Apply automatic Oxlint fixes
+npm run format       # Format JavaScript, JSON, and Markdown with Oxfmt
+npm run format:check # Check formatting without changing files
+npm run validate     # Lint, formatting checks, and all tests
+```
+
+Development tools are pinned separately from the MCP runtime. Normal skill installation only installs the runtime dependencies. Shell scripts are syntax-checked with Bash; Oxfmt does not format them. Generated lockfiles and installed dependencies are excluded from formatting.
+
 ## Select a browser mode
 
 When the control MCP is available, call it first:

@@ -16,7 +16,9 @@ export async function executable(file, content) {
 
 export async function fakeNpm(base) {
   const file = path.join(base, 'npm fixture');
-  return executable(file, `#!${process.execPath}
+  return executable(
+    file,
+    `#!${process.execPath}
 const fs = require('node:fs');
 const path = require('node:path');
 if (process.argv.slice(2).join(' ') !== 'ci --no-audit --no-fund') process.exit(90);
@@ -26,13 +28,17 @@ const dir = path.join('node_modules', 'chrome-devtools-mcp');
 fs.mkdirSync(dir, {recursive:true});
 fs.writeFileSync(path.join(dir,'package.json'), JSON.stringify({version:manifest.dependencies['chrome-devtools-mcp'],type:'module',bin:{'chrome-devtools-mcp':'./cli.mjs'}}));
 fs.writeFileSync(path.join(dir,'cli.mjs'), ${JSON.stringify(fixtureMcp)});
-`);
+`,
+  );
 }
 
 export async function installFixtureRuntime(root, version = '1.8.0') {
   const dir = path.join(root, 'runtime/node_modules/chrome-devtools-mcp');
   await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, 'package.json'), JSON.stringify({ version, type: 'module', bin: { 'chrome-devtools-mcp': './cli.mjs' } }));
+  await writeFile(
+    path.join(dir, 'package.json'),
+    JSON.stringify({ version, type: 'module', bin: { 'chrome-devtools-mcp': './cli.mjs' } }),
+  );
   await writeFile(path.join(dir, 'cli.mjs'), fixtureMcp);
 }
 
