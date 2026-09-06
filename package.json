@@ -12,7 +12,12 @@
     "url": "https://github.com/blockedby/browser-chrome-skill/issues"
   },
   "homepage": "https://github.com/blockedby/browser-chrome-skill",
-  "keywords": ["agent-skill", "pi", "chrome", "mcp"],
+  "keywords": [
+    "agent-skill",
+    "pi",
+    "chrome",
+    "mcp"
+  ],
   "files": [
     "LICENSE",
     "README.md",
@@ -20,15 +25,21 @@
     "control-mcp/",
     "mcp/",
     "references/",
-    "scripts/"
+    "scripts/",
+    "runtime/package.json",
+    "runtime/package-lock.json",
+    "tests/"
   ],
   "pi": {
-    "skills": ["."]
+    "skills": [
+      "."
+    ]
   },
   "scripts": {
-    "test": "node --test control-mcp/*.test.mjs",
-    "test:shell": "bash -n scripts/*.sh",
+    "test": "node --test control-mcp/*.test.mjs tests/*.test.mjs",
+    "test:shell": "bash -c 'for script in scripts/*.sh; do bash -n \"$script\" || exit; done'",
     "validate": "npm test && npm run test:shell",
-    "install:local": "bash scripts/install-local.sh"
+    "install:local": "bash scripts/install-local.sh",
+    "install:runtime": "bash scripts/install-runtime.sh"
   }
 }

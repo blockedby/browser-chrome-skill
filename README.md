@@ -8,7 +8,7 @@ A portable [Agent Skills](https://skills.sh/) package for using Chrome through C
 - Skill name: `browser-chrome`
 - Control/session MCP script: `scripts/control-mcp.sh`
 - DevTools MCP wrapper: `scripts/mcp.sh`
-- DevTools MCP package: `chrome-devtools-mcp@latest`
+- DevTools MCP package: `chrome-devtools-mcp` (version pinned by this skill)
 
 ## Contract
 
@@ -21,13 +21,10 @@ A portable [Agent Skills](https://skills.sh/) package for using Chrome through C
 ## Runtime requirements
 
 - Google Chrome or Chromium.
-- Node.js with `npm`/`npx` available.
+- A Node.js version supported by the pinned MCP release (currently 20.19+, 22.12+, or 23+; Node 21 is not supported).
+- npm for installation and updates. Normal MCP startup does not use npm or npx.
 - Pi with [`pi-mcp-adapter`](https://github.com/nicobailon/pi-mcp-adapter) installed and enabled.
-- `chrome-devtools-mcp@latest` reachable via:
-
-  ```bash
-  npx -y chrome-devtools-mcp@latest --help
-  ```
+- Network access to npm during installation. Once installed, starting MCP does not require npm registry access.
 
 ## Install with skills CLI
 
@@ -53,15 +50,49 @@ From the repository checkout:
 ./scripts/install-local.sh
 ```
 
-The installer copies the skill to `~/.pi/agent/skills/browser-chrome` (or the configured target) and merges three direct-path entries into `~/.pi/agent/mcp.json`:
+The installer first installs and verifies the pinned MCP runtime using the bundled lockfile. If that fails, the existing skill and MCP configuration stay intact. It then copies the skill to `~/.pi/agent/skills/browser-chrome` (or the configured target) and merges three direct-path entries into `~/.pi/agent/mcp.json`:
 
 - `browser-chrome-control` — policy and session selection;
 - `browser-chrome-headed` — persistent headed DevTools access;
 - `browser-chrome-headless` — disposable headless DevTools access.
 
-Existing MCP servers are preserved. If an MCP file already exists, the installer writes a `.bak` copy before updating it. Restart Pi or reconnect MCP after installation. Use `npm run validate` to run the local deterministic checks without starting Chrome.
+Existing MCP servers and custom browser environment settings are preserved. If an MCP file already exists, the installer writes a `.bak` copy before updating it. Restart Pi or reconnect MCP after installation. Use `npm run validate` to run the local deterministic checks without starting Chrome.
 
 The example configuration is in [`mcp/browser-chrome.mcp.json`](mcp/browser-chrome.mcp.json); it uses command aliases for manually managed installations, while `install-local.sh` writes absolute paths to the copied scripts.
+
+## Use with Codex or another MCP client
+
+Install the runtime in your skill checkout once:
+
+```bash
+bash /absolute/path/to/browser-chrome-skill/scripts/install-runtime.sh
+```
+
+Configure the client to run the scripts using absolute paths. For Codex, add or update these sections in `~/.codex/config.toml` (replace the example paths):
+
+```toml
+[mcp_servers.browser-chrome-control]
+command = "/absolute/path/to/browser-chrome-skill/scripts/control-mcp.sh"
+startup_timeout_sec = 60
+
+[mcp_servers.browser-chrome-headed]
+command = "/absolute/path/to/browser-chrome-skill/scripts/mcp.sh"
+args = ["headed-connect"]
+startup_timeout_sec = 60
+
+[mcp_servers.browser-chrome-headless]
+command = "/absolute/path/to/browser-chrome-skill/scripts/mcp.sh"
+args = ["headless"]
+startup_timeout_sec = 60
+```
+
+`headed-connect` starts the MCP server without opening Chrome. Ask the control server for a persistent session before using headed browser tools. This suits clients that initialize all MCP servers on startup. The Pi installer uses `headed` with lazy startup, which can open or reuse Chrome when that server is requested.
+
+The launcher preserves the caller's working directory. It starts its own installed runtime directly, so project dependencies and npm configuration do not participate in MCP startup. Installing just the skill instructions is not enough: install the runtime before connecting MCP.
+
+## Update or repair the MCP runtime
+
+Update the skill to a reviewed release, then rerun `scripts/install-local.sh` for a Pi installation, or `scripts/install-runtime.sh` for an in-place installation. There is no automatic update during MCP startup. Maintainers change `runtime/package.json` and `runtime/package-lock.json` together when updating the pinned MCP version.
 
 ## Select a browser mode
 
@@ -118,7 +149,7 @@ BROWSER_CHROME_HEADLESS_LOCAL_START=0
 # Chrome and MCP runtime overrides.
 BROWSER_CHROME_BIN=google-chrome-stable
 BROWSER_CHROME_NODE=node
-BROWSER_CHROME_MCP_PACKAGE=chrome-devtools-mcp@latest
+BROWSER_CHROME_NPM=npm # installation only
 ```
 
 For LAN, Tailscale, or SSH-tunnel use, set endpoint URLs, bind addresses, and remote start/close commands deliberately. The debug endpoint is powerful; restrict its exposure to the intended host/network.

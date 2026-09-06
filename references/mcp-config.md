@@ -40,13 +40,10 @@ The recommended Pi MCP setup has one control/session server plus two DevTools se
 
 It is not a full `chrome-devtools-mcp` proxy. For browser actions, use the DevTools MCP server named in the control tool result.
 
-`browser-chrome-mcp` calls `npx -y chrome-devtools-mcp@latest` by default.
+`browser-chrome-mcp` runs the MCP package installed under the skill's `runtime/node_modules` directly through Node. It does not invoke npm/npx, change the caller's working directory, or resolve the caller's project dependencies.
 
-Override package or npx command with:
+Run `scripts/install-local.sh` to prepare the pinned runtime, install the skill, and merge the Pi MCP entries into `~/.pi/agent/mcp.json`. Run `scripts/install-runtime.sh` to prepare or repair a runtime in place for other clients. The version and complete dependency resolution are recorded in `runtime/package.json` and `runtime/package-lock.json`.
 
-```bash
-export BROWSER_CHROME_MCP_PACKAGE=chrome-devtools-mcp@latest
-export BROWSER_CHROME_NPX=npx
-```
+Use `BROWSER_CHROME_NODE` to select Node and `BROWSER_CHROME_NPM` to select npm during installation. The old `BROWSER_CHROME_NPX` and `BROWSER_CHROME_MCP_PACKAGE` startup overrides are no longer supported; update the runtime manifest and lockfile to select another reviewed MCP release.
 
-Run `scripts/install-local.sh` to install the skill and merge these MCP entries into `~/.pi/agent/mcp.json`. The installer preserves `browser-chrome-headed` and `browser-chrome-headless` while adding/updating `browser-chrome-control`.
+For clients such as Codex that initialize MCP servers eagerly, configure `mcp.sh headed-connect` for the headed server. This starts the MCP transport without opening Chrome; acquire a persistent session through the control MCP before browser operations. `mcp.sh headed` retains the Pi lazy-start behavior. See the Codex configuration example in [README.md](../README.md#use-with-codex-or-another-mcp-client).
