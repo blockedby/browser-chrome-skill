@@ -84,6 +84,12 @@ mcp({ server: "browser-chrome-headed" })   # for returned headed-persistent guid
 
 Then call the needed `chrome_devtools_*` tools exposed by the selected DevTools server. The control MCP is not a full `chrome-devtools-mcp` proxy.
 
+## Bundled CLI and updates
+
+When using the CLI instead of MCP tools, resolve `runtime/node_modules/.bin/chrome-devtools` from this skill directory and consult the bundled `runtime/node_modules/chrome-devtools-mcp/skills/chrome-devtools-cli/SKILL.md` for command usage. Keep the same browser-mode and authorization boundaries. Run commands directly; do not start or restart the daemon before each action.
+
+This skill pins its MCP runtime locally. A CLI notice recommending `npm install -g` does not update this installation. Update the skill's runtime manifest and lockfile together, run `scripts/install-runtime.sh`, then reconnect stdio MCP servers. For an already-running CLI daemon, restart once using the updated local binary while preserving its endpoint and launch flags.
+
 ## Safety
 
 The headed browser may contain the user's active accounts, cookies, passwords, and private data. The default local headed profile is a dedicated profile under `BROWSER_CHROME_HOME`; it is not the normal personal Chrome profile. A custom endpoint or start command may still point to an authenticated profile, so that choice must be explicit.

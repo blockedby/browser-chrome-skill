@@ -94,6 +94,8 @@ The launcher preserves the caller's working directory. It starts its own install
 
 Update the skill to a reviewed release, then rerun `scripts/install-local.sh` for a Pi installation, or `scripts/install-runtime.sh` for an in-place installation. There is no automatic update during MCP startup. Maintainers change `runtime/package.json` and `runtime/package-lock.json` together when updating the pinned MCP version.
 
+The current runtime pins `chrome-devtools-mcp` **1.10.1**, including its bundled `chrome-devtools-cli` skill. A CLI update notice may recommend a global npm install, but that does not update this skill's local runtime. After updating it, reconnect stdio MCP servers. If you use the bundled `runtime/node_modules/.bin/chrome-devtools` CLI, restart its daemon once with that same binary's `start` command, preserving your browser endpoint and launch flags. Do not restart it before every tool call.
+
 ## Development checks
 
 Install development tools from the repository checkout with `npm ci`, then run:

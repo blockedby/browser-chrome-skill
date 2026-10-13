@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile, chmod, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, chmod, rm } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
@@ -32,7 +32,11 @@ fs.writeFileSync(path.join(dir,'cli.mjs'), ${JSON.stringify(fixtureMcp)});
   );
 }
 
-export async function installFixtureRuntime(root, version = '1.8.0') {
+export async function installFixtureRuntime(root, version) {
+  if (version === undefined) {
+    const manifest = JSON.parse(await readFile(path.join(root, 'runtime/package.json'), 'utf8'));
+    version = manifest.dependencies['chrome-devtools-mcp'];
+  }
   const dir = path.join(root, 'runtime/node_modules/chrome-devtools-mcp');
   await mkdir(dir, { recursive: true });
   await writeFile(
@@ -45,7 +49,8 @@ export async function installFixtureRuntime(root, version = '1.8.0') {
 const fixtureMcp = `
 import { createInterface } from 'node:readline';
 import { writeFileSync } from 'node:fs';
-if (process.argv.includes('--version')) { console.log('1.8.0'); process.exit(0); }
+import { createRequire } from 'node:module';
+if (process.argv.includes('--version')) { console.log(createRequire(import.meta.url)('./package.json').version); process.exit(0); }
 if (process.env.FIXTURE_EXIT) process.exit(Number(process.env.FIXTURE_EXIT));
 if (process.env.FIXTURE_STATE) writeFileSync(process.env.FIXTURE_STATE, JSON.stringify({cwd:process.cwd(),pid:process.pid,args:process.argv.slice(2)}));
 const lines = createInterface({input:process.stdin});
