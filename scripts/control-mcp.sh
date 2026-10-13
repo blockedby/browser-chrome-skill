@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 SKILL_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 NODE="${BROWSER_CHROME_NODE:-node}"
 
